@@ -26,6 +26,18 @@ BUFFER_SIZE = 300  # Sliding window of 300 frames (~10 seconds at 30 fps)
 MIN_FRAMES_FOR_BPM = 90  # Minimum frames needed to calculate BPM (~3 seconds)
 TARGET_FPS = 30.0  # Target frame rate for signal processing
 
+# Face detection and tracking thresholds
+MOVEMENT_THRESHOLD = 0.01  # Maximum face movement for stable reading
+
+# BPM physiological limits
+MIN_VALID_BPM = 40  # Minimum physiologically valid heart rate
+MAX_VALID_BPM = 200  # Maximum physiologically valid heart rate
+
+# Camera settings
+CAMERA_WIDTH = 640
+CAMERA_HEIGHT = 480
+CAMERA_FPS = 30
+
 # Color scheme (BGR format for OpenCV)
 CYAN = (255, 255, 0)  # #00FFFF in BGR
 RED = (0, 0, 255)  # #FF0000 in BGR
@@ -403,7 +415,7 @@ class VitalSenseMonitor:
             self.last_face_landmarks = landmarks
             
             # Check stability (movement threshold)
-            is_stable = self.face_movement < 0.01
+            is_stable = self.face_movement < MOVEMENT_THRESHOLD
             
             # Get forehead ROI
             mask, hull, bbox = self.get_forehead_roi(frame, landmarks)
@@ -420,7 +432,7 @@ class VitalSenseMonitor:
                 
                 bpm, filtered = process_signal(raw_signal, fs=fps)
                 
-                if bpm > 40 and bpm < 200:  # Physiologically valid range
+                if bpm > MIN_VALID_BPM and bpm < MAX_VALID_BPM:
                     self.bpm_history.append(bpm)
                     # Smooth BPM with moving average
                     self.current_bpm = np.mean(self.bpm_history)
@@ -451,9 +463,9 @@ class VitalSenseMonitor:
             return
         
         # Set camera properties for optimal performance
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-        cap.set(cv2.CAP_PROP_FPS, 30)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
+        cap.set(cv2.CAP_PROP_FPS, CAMERA_FPS)
         
         print("=" * 50)
         print("VITAL-SENSE Heart Rate Monitor")

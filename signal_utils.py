@@ -15,6 +15,11 @@ import numpy as np
 from scipy import signal
 from scipy.signal import butter, filtfilt, detrend
 
+# Constants for signal processing
+MIN_FREQUENCY_SEPARATION = 0.01  # Minimum separation between low and high cutoff frequencies
+MIN_FILTER_LENGTH = 13  # Minimum signal length for filtfilt with default padlen
+CV_NORMALIZATION_FACTOR = 5.0  # Coefficient of variation normalization factor for quality score
+
 
 def detrend_signal(raw_signal: np.ndarray) -> np.ndarray:
     """
@@ -81,7 +86,7 @@ def butter_bandpass(lowcut: float, highcut: float, fs: float, order: int = 4) ->
     high = max(0.001, min(high, 0.999))
     
     if low >= high:
-        low = high - 0.01
+        low = high - MIN_FREQUENCY_SEPARATION
     
     b, a = butter(order, [low, high], btype='band')
     return b, a
@@ -106,7 +111,7 @@ def bandpass_filter(data: np.ndarray, lowcut: float = 0.7, highcut: float = 4.0,
     Returns:
         Filtered signal as a 1D numpy array
     """
-    if len(data) < 13:  # Minimum length for filtfilt with default padlen
+    if len(data) < MIN_FILTER_LENGTH:
         return data
     
     b, a = butter_bandpass(lowcut, highcut, fs, order)
@@ -261,6 +266,6 @@ def calculate_signal_quality(filtered_signal: np.ndarray) -> float:
     
     # Convert to quality score (lower CV = higher quality)
     # Typical good signal has CV around 0.5-2.0
-    quality = max(0.0, min(1.0, 1.0 - (cv / 5.0)))
+    quality = max(0.0, min(1.0, 1.0 - (cv / CV_NORMALIZATION_FACTOR)))
     
     return quality
